@@ -27,21 +27,21 @@ app.use('/admin', adminRouter);
 const PORT = process.env.PORT || 5000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
-cron.schedule('* * * * *', async () => {
-  try {
-    const currentTime = new Date();
-    const itemsToClose = await ItemModel.find({
-      bidEndTime: { $lte: currentTime },
-      currentStatus: { $ne: 'closed' }
-    });
+// cron.schedule('* * * * *', async () => {
+//   try {
+//     const currentTime = new Date();
+//     const itemsToClose = await ItemModel.find({
+//       bidEndTime: { $lte: currentTime },
+//       currentStatus: { $ne: 'closed' }
+//     });
 
-    for (const item of itemsToClose) {
-      await axios.post(`${BASE_URL}/items/${item._id}/close-auction`);
-    }
-  } catch (error) {
-    console.error('Error in auction closing cron job:', error);
-  }
-});
+//     for (const item of itemsToClose) {
+//       await axios.post(`${BASE_URL}/items/${item._id}/close-auction`);
+//     }
+//   } catch (error) {
+//     console.error('Error in auction closing cron job:', error);
+//   }
+// });
 
 dbConnection.connect()
   .then(() => {

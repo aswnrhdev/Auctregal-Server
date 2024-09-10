@@ -49,8 +49,11 @@ import {
     createContact,
     getAllContacts
 } from "../controllers/contactController";
+import { getDashboardStats } from "../controllers/dashboardController";
+import multer from "multer";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/signup', signup);
 router.post('/verifyOtp', verifyOtp);
@@ -60,7 +63,7 @@ router.post('/refreshToken', refreshToken);
 
 router.get('/user', getUserByEmail);
 router.put('/user', updateUser);
-router.post('/upload', uploadUserImage);
+router.post('/upload', upload.single('file'), uploadUserImage);
 
 router.post('/create-payment-intent', createPaymentIntent);
 router.post('/update-wallet', updateWallet);
@@ -92,5 +95,7 @@ router.post('/slips/:slipCode/refund', processRefund);
 
 router.post('/contacts', createContact);
 router.get('/contacts', getAllContacts);
+
+router.get('/admin/dashboard-stats', getDashboardStats);
 
 export default router;
