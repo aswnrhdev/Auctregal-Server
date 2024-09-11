@@ -25,6 +25,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/', (req, res) => {
+  res.send('Test Mode Checking')
+})
+
 app.use('/', router);
 app.use('/admin', adminRouter);
 
