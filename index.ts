@@ -25,7 +25,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => {
+app.get('/hello', (req, res) => {
   res.send('Test Mode Checking')
 })
 
