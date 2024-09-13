@@ -276,6 +276,25 @@ const updateWallet = async (req: Request, res: Response) => {
 };
 
 
+// export const getUserByEmail = async (req: Request, res: Response) => {
+//     const { email } = req.query;
+
+//     if (!email) {
+//         return res.status(400).json({ message: 'Email is required' });
+//     }
+
+//     try {
+//         const user = await UserModel.findOne({ email }).select('name email image walletBalance auctCode');
+//         if (!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+//         res.json(user);
+//     } catch (error) {
+//         res.status(500).json({ message: 'Server error' });
+//     }
+// };
+
+
 export const getUserByEmail = async (req: Request, res: Response) => {
     const { email } = req.query;
 
@@ -288,12 +307,78 @@ export const getUserByEmail = async (req: Request, res: Response) => {
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
+
+        // Fetch bidding history
+        const items = await ItemModel.find({
+            $or: [
+                { 'biddingTokens.userId': user._id },
+                { 'bidders.userId': user._id }
+            ]
+        }).select('title category make model name currentStatus bidStatus bidders biddingTokens transaction');
+
+        const biddingHistory = items.map(item => {
+            const userBid = item.bidders.find(bidder => bidder.userId.toString() === user._id.toString());
+            const hasBiddingToken = item.biddingTokens.some(token => token.userId.toString() === user._id.toString());
+
+            let itemTitle;
+            if (item.category === 'Vehicles') {
+                itemTitle = `${item.make} ${item.model}`;
+            } else if (item.category === 'Wine and Spirits') {
+                itemTitle = item.name;
+            } else {
+                itemTitle = item.title;
+            }
+
+            let bidResult, transactionStatus, bidAmount;
+
+            // Determine transaction status
+            if (userBid) {
+                transactionStatus = item.transaction?.status || 'Pending';
+            } else {
+                transactionStatus = 'N/A';
+            }
+
+            // Determine bid result based on transaction status
+            bidResult = transactionStatus === 'Completed' ? 'Success' : 'Pending';
+
+            // Determine bid amount
+            if (item.bidStatus === 'active' || !userBid) {
+                bidAmount = 'N/A';
+            } else {
+                bidAmount = new Intl.NumberFormat('en-IN', { 
+                    style: 'currency', 
+                    currency: 'INR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(userBid.bidAmount);
+            }
+
+            return {
+                itemTitle,
+                category: item.category,
+                bidStatus: item.bidStatus,
+                bidResult,
+                transactionStatus,
+                bidAmount,
+                hasBiddingToken
+            };
+        });
+
+        res.json({ 
+            ...user.toObject(), 
+            walletBalance: new Intl.NumberFormat('en-IN', { 
+                style: 'currency', 
+                currency: 'INR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(user.walletBalance),
+            biddingHistory 
+        });
     } catch (error) {
+        console.error('Error fetching user data:', error);
         res.status(500).json({ message: 'Server error' });
     }
 };
-
 
 
 export const updateUser = async (req: Request, res: Response) => {
